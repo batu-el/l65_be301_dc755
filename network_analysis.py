@@ -5,6 +5,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import os
+import time
+import torch
+import torch.nn.functional as F
+import torch_geometric
+from torch_geometric.datasets import Planetoid
+from GNNModel import GNNModel, SparseGraphTransformerModel
+from torch_geometric.data import Data, Batch
+from torch_geometric.utils import to_dense_adj
 
 from scipy.linalg import pinv
 
@@ -153,7 +161,7 @@ def triangle_count(adjacency : np.ndarray) -> int:
     graph = nx.from_numpy_array(adjacency)
     return sum(nx.triangles(graph).values()) // 3
 
-def run_analysis(adjacency_matrix, model):
+def run_analysis(adjacency_matrix, model, threshold_value=0.1, title="Cora"):
     """
     Runs the analysis on the given adjacency matrix and attention matrix of the model
     Args:
@@ -161,17 +169,82 @@ def run_analysis(adjacency_matrix, model):
     model: The model to analyse
     """
     attention_matrix = model.attn_weights_list[0].detach().cpu().numpy().squeeze()
-    return
+
+    # Threshold the attention matrix
+    attention_matrix = threshold(attention_matrix, threshold_value)
+
+    # Plot the attention matrix
+    plot_heatmap(attention_matrix, f'{title} Attention Matrix')
+    plot_heatmap(adjacency_matrix, f'{title} Adjacency Matrix')
+
+    # Get the degree distributions
+    adjacency_degree_distribution = get_degree_distribution_table(adjacency_matrix, f'{title} Adjacency Degree Distribution')
+    print(adjacency_degree_distribution)
+    attention_degree_distribution = get_degree_distribution_table(attention_matrix, f'{title} Attention Degree Distribution')
+    print(attention_degree_distribution)
+
+    # Get the shortest path matrices
+    adjacency_shortest_path_matrix = get_shortest_path_matrix(adjacency_matrix)
+    attention_shortest_path_matrix = get_shortest_path_matrix(attention_matrix)
+    plot_heatmap(adjacency_shortest_path_matrix, f'{title} Adjacency Shortest Path Matrix')
+    plot_heatmap(attention_shortest_path_matrix, f'{title} Attention Shortest Path Matrix')
+
+    # Get the commute times
+    adjacency_commute_times = compute_commute_times(adjacency_matrix)
+    attention_commute_times = compute_commute_times(attention_matrix)
+    plot_heatmap(adjacency_commute_times, f'{title} Adjacency Commute Times')
+    plot_heatmap(attention_commute_times, f'{title} Attention Commute Times')
+
+    # Get the number of triangles
+    adjacency_triangles = triangle_count(adjacency_matrix)
+    attention_triangles = triangle_count(attention_matrix)
+    print(f'{title} Adjacency triangles: {adjacency_triangles}')
+    print(f'{title} Attention triangles: {attention_triangles}')
 
 if __name__ == "__main__":
-    # Create a random graph
-    graph = nx.erdos_renyi_graph(100, 0.1)
-    adjacency = nx.to_numpy_array(graph)
-    # Plot the graph
-    nx.draw(graph, with_labels=True)
-    plt.show()
-    # Plot the adjacency matrix
-    plot_heatmap(adjacency, 'Adjacency Matrix')
-    # Get the degree distribution
-    degree_distribution = get_degree_distribution_table(adjacency, 'Degree Distribution')
-    print(degree_distribution)
+    dataset = 'Cora'
+    dataset = Planetoid('/tmp/Cora', dataset)
+    data = dataset[0]
+    print(data)
+    data.dense_adj = to_dense_adj(data.edge_index, max_num_nodes=data.x.shape[0])[0]
+    adjacency_matrix = nx.to_numpy_array(nx.from_edgelist(data.edge_index.T.tolist()))
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    data = data.to(device)
+    model = SparseGraphTransformerModel(dataset=dataset).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+    def train():
+        model.train()
+        optimizer.zero_grad()
+        out = model(data.x, data.dense_adj)
+        loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
+        loss.backward()
+        optimizer.step()
+        return float(loss)
+    
+    @torch.no_grad()
+    def test():
+        model.eval()
+        pred, accs = model(data.x, data.dense_adj).argmax(dim=-1), []
+        for _, mask in data('train_mask', 'val_mask', 'test_mask'):
+            accs.append(int((pred[mask] == data.y[mask]).sum()) / int(mask.sum()))
+        return accs
+    
+    best_val_acc = test_acc = 0
+    times = []
+    for epoch in range(1, 100):
+        start = time.time()
+        loss = train()
+        train_acc, val_acc, tmp_test_acc = test()
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+            test_acc = tmp_test_acc
+        print(f'Epoch: {epoch:04d}, Loss: {loss:.4f} Train: {train_acc:.4f}, '
+            f'Val: {val_acc:.4f}, Test: {tmp_test_acc:.4f}, '
+            f'Final Test: {test_acc:.4f}')
+        times.append(time.time() - start)
+    
+    print(f"Median time per epoch: {torch.tensor(times).median():.4f}s")
+
+    run_analysis(adjacency_matrix, model)

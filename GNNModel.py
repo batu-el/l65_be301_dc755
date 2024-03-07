@@ -89,7 +89,7 @@ class GNNModel(Module):
 class SparseGraphTransformerModel(Module):
     def __init__(
             self,
-            data: Data,
+            dataset,
             # in_dim: int = data.x.shape[-1],
             hidden_dim: int = 128,
             num_heads: int = 1,
@@ -99,8 +99,8 @@ class SparseGraphTransformerModel(Module):
         ):
         super().__init__()
 
-        in_dim = data.x.shape[-1]
-        out_dim = len(data.y.unique())
+        in_dim = dataset.num_features
+        out_dim = dataset.num_classes
 
         self.lin_in = Linear(in_dim, hidden_dim)
         self.lin_out = Linear(hidden_dim, out_dim)
