@@ -46,15 +46,18 @@ class GNNModel(Module):
 
     def __init__(
             self,
-            in_dim: int = data.x.shape[-1],
+            data: Data,
+            # in_dim: int = data.x.shape[-1],
             hidden_dim: int = 128,
             num_heads: int = 1,
             num_layers: int = 1,
-            out_dim: int = len(data.y.unique()),
+            # out_dim: int = len(data.y.unique()),
             dropout: float = 0.5,
         ):
         super().__init__()
 
+        in_dim = data.x.shape[-1]
+        out_dim = len(data.y.unique())
         self.lin_in = Linear(in_dim, hidden_dim)
         self.lin_out = Linear(hidden_dim, out_dim)
 
@@ -86,14 +89,18 @@ class GNNModel(Module):
 class SparseGraphTransformerModel(Module):
     def __init__(
             self,
-            in_dim: int = data.x.shape[-1],
+            data: Data,
+            # in_dim: int = data.x.shape[-1],
             hidden_dim: int = 128,
             num_heads: int = 1,
             num_layers: int = 1,
-            out_dim: int = len(data.y.unique()),
+            # out_dim: int = len(data.y.unique()),
             dropout: float = 0.5,
         ):
         super().__init__()
+
+        in_dim = data.x.shape[-1]
+        out_dim = len(data.y.unique())
 
         self.lin_in = Linear(in_dim, hidden_dim)
         self.lin_out = Linear(hidden_dim, out_dim)
@@ -145,15 +152,19 @@ class DenseGraphTransformerModel(Module):
 
     def __init__(
             self,
-            in_dim: int = data.x.shape[-1],
+            data: Data,
+            # in_dim: int = data.x.shape[-1],
             pos_enc_dim: int = 16,
             hidden_dim: int = 128,
             num_heads: int = 1,
             num_layers: int = 1,
-            out_dim: int = len(data.y.unique()),
+            # out_dim: int = len(data.y.unique()),
             dropout: float = 0.5,
         ):
         super().__init__()
+
+        in_dim = data.x.shape[-1]
+        out_dim = len(data.y.unique())
 
         self.lin_in = Linear(in_dim, hidden_dim)
         self.lin_pos_enc = Linear(pos_enc_dim, hidden_dim)
@@ -222,15 +233,19 @@ class DenseGraphTransformerModel_V2(Module):
 
     def __init__(
             self,
-            in_dim: int = data.x.shape[-1],
+            data: Data,
+            # in_dim: int = data.x.shape[-1],
             pos_enc_dim: int = 16,
             hidden_dim: int = 128,
             num_heads: int = 1,
             num_layers: int = 1,
-            out_dim: int = len(data.y.unique()),
+            # out_dim: int = len(data.y.unique()),
             dropout: float = 0.5,
         ):
         super().__init__()
+
+        in_dim = data.x.shape[-1]
+        out_dim = len(data.y.unique())
 
         self.lin_in = Linear(in_dim, hidden_dim)
         self.lin_pos_enc = Linear(pos_enc_dim, hidden_dim)
