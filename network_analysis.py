@@ -10,7 +10,9 @@ import torch
 import torch.nn.functional as F
 import torch_geometric
 from torch_geometric.datasets import Planetoid
-from GNNModel import GNNModel, SparseGraphTransformerModel
+from GNNModel import GNNModel, SparseGraphTransformerModel, DenseGraphTransformerModel
+from dgl.data import RomanEmpireDataset
+from roman_empire import preprocess_roman_empire
 from torch_geometric.data import Data, Batch
 from torch_geometric.utils import to_dense_adj
 
@@ -67,7 +69,8 @@ def get_degree_distribution_table(adjacency_matrix : np.ndarray, title : str = N
 
 
 
-def get_shortest_path_matrix(adjacency_matrix : np.ndarray) -> np.ndarray:
+
+def get_shortest_path_matrix(adjacency_matrix : np.ndarray) -> torch.Tensor:
     """
     Returns the shortest path matrix of a graph.
     Args:
@@ -76,7 +79,18 @@ def get_shortest_path_matrix(adjacency_matrix : np.ndarray) -> np.ndarray:
     np.ndarray: The shortest path matrix
     """
     graph = nx.from_numpy_array(adjacency_matrix, create_using=nx.DiGraph())
-    return nx.floyd_warshall_numpy(graph)
+    return torch.tensor(nx.floyd_warshall_numpy(graph)).float()
+
+def get_shortest_path_matrix_tensor(adjacency_matrix : torch.Tensor) -> torch.Tensor:
+    """
+    Returns the shortest path matrix of a graph.
+    Args:
+    adjacency_matrix: np.ndarray: The adjacency matrix of the graph
+    Returns:
+    np.ndarray: The shortest path matrix
+    """
+    graph = nx.from_numpy_array(adjacency_matrix.cpu().numpy(), create_using=nx.DiGraph())
+    return torch.tensor(nx.floyd_warshall_numpy(graph)).float()
 
 def plot_heatmap(matrix : np.ndarray, title : str):
     """
@@ -109,7 +123,7 @@ def get_laplacian_matrix(adjacency_matrix : np.ndarray) -> np.ndarray:
     """
     return nx.laplacian_matrix(nx.from_numpy_array(adjacency_matrix)).toarray()
 
-def get_normalized_laplacian_matrix(adjacency_matrix : np.ndarray) -> np.ndarray:
+def get_normalized_laplacian_matrix(adjacency_matrix) -> np.ndarray:
     """
     Returns the normalized Laplacian matrix of a graph.
     Args:
@@ -202,22 +216,24 @@ def run_analysis(adjacency_matrix, model, threshold_value=0.1, title="Cora"):
     print(f'{title} Attention triangles: {attention_triangles}')
 
 if __name__ == "__main__":
-    dataset = 'Cora'
-    dataset = Planetoid('/tmp/Cora', dataset)
-    data = dataset[0]
+    # dataset = preprocess_roman_empire()
+    # dataset = 'Cora'
+    # dataset = Planetoid('/tmp/Cora', dataset)
+    data = preprocess_roman_empire()
     print(data)
     data.dense_adj = to_dense_adj(data.edge_index, max_num_nodes=data.x.shape[0])[0]
+    data.dense_sp_matrix = get_shortest_path_matrix_tensor(data.dense_adj).float()
     adjacency_matrix = nx.to_numpy_array(nx.from_edgelist(data.edge_index.T.tolist()))
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     data = data.to(device)
-    model = SparseGraphTransformerModel(dataset=dataset).to(device)
+    model = DenseGraphTransformerModel(data=data).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     def train():
         model.train()
         optimizer.zero_grad()
-        out = model(data.x, data.dense_adj)
+        out = model(data.x, 0, data.dense_sp_matrix)
         loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
         loss.backward()
         optimizer.step()
@@ -226,7 +242,7 @@ if __name__ == "__main__":
     @torch.no_grad()
     def test():
         model.eval()
-        pred, accs = model(data.x, data.dense_adj).argmax(dim=-1), []
+        pred, accs = model(data.x, 0, data.dense_sp_matrix).argmax(dim=-1), []
         for _, mask in data('train_mask', 'val_mask', 'test_mask'):
             accs.append(int((pred[mask] == data.y[mask]).sum()) / int(mask.sum()))
         return accs

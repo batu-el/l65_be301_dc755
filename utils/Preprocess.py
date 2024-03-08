@@ -2,7 +2,7 @@ import torch
 from torch_geometric.data import Data
 import numpy as np
 
-def preprocess(data, dataset, train_ratio = 0.7, val_ratio = 0.15, test_ratio = 0.15):
+def preprocess(dataset, train_ratio = 0.7, val_ratio = 0.15, test_ratio = 0.15):
     g = dataset[0]
     y = g.ndata['label']
     feat = g.ndata['feat']
