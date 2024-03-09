@@ -1,6 +1,9 @@
 from dgl.data import RomanEmpireDataset
 import torch
 from torch_geometric.data import Data
+from torch_geometric.utils import to_dense_adj
+import networkx as nx
+import numpy as np
 
 def preprocess(graph, train_ratio = 0.7, val_ratio = 0.15, test_ratio = 0.15):
     x = graph.ndata['feat']
@@ -26,3 +29,28 @@ def preprocess_roman_empire():
     return preprocess(graph=dataset)
 
 print(preprocess_roman_empire())
+
+def get_shortest_path_matrix(adjacency_matrix : np.ndarray) -> torch.Tensor:
+    """
+    Returns the shortest path matrix of a graph.
+    Args:
+    adjacency_matrix: np.ndarray: The adjacency matrix of the graph
+    Returns:
+    np.ndarray: The shortest path matrix
+    """
+    graph = nx.from_numpy_array(adjacency_matrix, create_using=nx.DiGraph())
+    return torch.tensor(nx.floyd_warshall_numpy(graph)).float()
+
+def get_shortest_path_matrix_tensor(adjacency_matrix : torch.Tensor) -> torch.Tensor:
+    """
+    Returns the shortest path matrix of a graph.
+    Args:
+    adjacency_matrix: np.ndarray: The adjacency matrix of the graph
+    Returns:
+    np.ndarray: The shortest path matrix
+    """
+    return get_shortest_path_matrix(adjacency_matrix.cpu().numpy())
+
+dataset = preprocess_roman_empire()
+dense_adj = to_dense_adj(dataset.edge_index, max_num_nodes=dataset.x.shape[0])[0]
+

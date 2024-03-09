@@ -89,8 +89,9 @@ def get_shortest_path_matrix_tensor(adjacency_matrix : torch.Tensor) -> torch.Te
     Returns:
     np.ndarray: The shortest path matrix
     """
-    graph = nx.from_numpy_array(adjacency_matrix.cpu().numpy(), create_using=nx.DiGraph())
-    return torch.tensor(nx.floyd_warshall_numpy(graph)).float()
+    return get_shortest_path_matrix(adjacency_matrix.cpu().numpy())
+    # graph = nx.from_numpy_array(adjacency_matrix.cpu().numpy(), create_using=nx.DiGraph())
+    # return torch.tensor(nx.floyd_warshall_numpy(graph)).float()
 
 def plot_heatmap(matrix : np.ndarray, title : str):
     """
@@ -175,7 +176,7 @@ def triangle_count(adjacency : np.ndarray) -> int:
     graph = nx.from_numpy_array(adjacency)
     return sum(nx.triangles(graph).values()) // 3
 
-def run_analysis(adjacency_matrix, model, threshold_value=0.1, title="Cora"):
+def run_analysis(adjacency_matrix, model, threshold_value=0.1, title="Cora", shortest_paths=True):
     """
     Runs the analysis on the given adjacency matrix and attention matrix of the model
     Args:
@@ -191,17 +192,22 @@ def run_analysis(adjacency_matrix, model, threshold_value=0.1, title="Cora"):
     plot_heatmap(attention_matrix, f'{title} Attention Matrix')
     plot_heatmap(adjacency_matrix, f'{title} Adjacency Matrix')
 
+    print("Heatmaps saved")
+
     # Get the degree distributions
     adjacency_degree_distribution = get_degree_distribution_table(adjacency_matrix, f'{title} Adjacency Degree Distribution')
     print(adjacency_degree_distribution)
     attention_degree_distribution = get_degree_distribution_table(attention_matrix, f'{title} Attention Degree Distribution')
     print(attention_degree_distribution)
 
+    print("Degree distributions saved")
+
     # Get the shortest path matrices
-    adjacency_shortest_path_matrix = get_shortest_path_matrix(adjacency_matrix)
-    attention_shortest_path_matrix = get_shortest_path_matrix(attention_matrix)
-    plot_heatmap(adjacency_shortest_path_matrix, f'{title} Adjacency Shortest Path Matrix')
-    plot_heatmap(attention_shortest_path_matrix, f'{title} Attention Shortest Path Matrix')
+    if shortest_paths:
+        adjacency_shortest_path_matrix = get_shortest_path_matrix(adjacency_matrix)
+        attention_shortest_path_matrix = get_shortest_path_matrix(attention_matrix)
+        plot_heatmap(adjacency_shortest_path_matrix, f'{title} Adjacency Shortest Path Matrix')
+        plot_heatmap(attention_shortest_path_matrix, f'{title} Attention Shortest Path Matrix')
 
     # Get the commute times
     adjacency_commute_times = compute_commute_times(adjacency_matrix)
@@ -222,18 +228,19 @@ if __name__ == "__main__":
     data = preprocess_roman_empire()
     print(data)
     data.dense_adj = to_dense_adj(data.edge_index, max_num_nodes=data.x.shape[0])[0]
-    data.dense_sp_matrix = get_shortest_path_matrix_tensor(data.dense_adj).float()
+    # data.dense_sp_matrix = get_shortest_path_matrix_tensor(data.dense_adj).float()
     adjacency_matrix = nx.to_numpy_array(nx.from_edgelist(data.edge_index.T.tolist()))
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     data = data.to(device)
-    model = DenseGraphTransformerModel(data=data).to(device)
+    # model = DenseGraphTransformerModel(data=data).to(device)
+    model = SparseGraphTransformerModel(data=data).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     def train():
         model.train()
         optimizer.zero_grad()
-        out = model(data.x, 0, data.dense_sp_matrix)
+        out = model(data.x, data.dense_adj)
         loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
         loss.backward()
         optimizer.step()
@@ -242,7 +249,7 @@ if __name__ == "__main__":
     @torch.no_grad()
     def test():
         model.eval()
-        pred, accs = model(data.x, 0, data.dense_sp_matrix).argmax(dim=-1), []
+        pred, accs = model(data.x, data.dense_adj).argmax(dim=-1), []
         for _, mask in data('train_mask', 'val_mask', 'test_mask'):
             accs.append(int((pred[mask] == data.y[mask]).sum()) / int(mask.sum()))
         return accs
@@ -263,4 +270,4 @@ if __name__ == "__main__":
     
     print(f"Median time per epoch: {torch.tensor(times).median():.4f}s")
 
-    run_analysis(adjacency_matrix, model)
+    run_analysis(adjacency_matrix, model, shortest_paths=False, title="Roman Empire")
