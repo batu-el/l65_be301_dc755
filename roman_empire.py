@@ -53,4 +53,4 @@ def get_shortest_path_matrix_tensor(adjacency_matrix : torch.Tensor) -> torch.Te
 
 dataset = preprocess_roman_empire()
 dense_adj = to_dense_adj(dataset.edge_index, max_num_nodes=dataset.x.shape[0])[0]
-
+torch.save(get_shortest_path_matrix_tensor(dense_adj), 'roman_shortest_path_matrix.pt')
