@@ -176,7 +176,7 @@ def triangle_count(adjacency : np.ndarray) -> int:
     graph = nx.from_numpy_array(adjacency)
     return sum(nx.triangles(graph).values()) // 3
 
-def run_analysis(adjacency_matrix, model, threshold_value=0.1, title="Cora", shortest_paths=True):
+def run_analysis(adjacency_matrix, model, threshold_value=0.1, title="Cora", shortest_paths=True, load_save=False):
     """
     Runs the analysis on the given adjacency matrix and attention matrix of the model
     Args:
@@ -187,39 +187,45 @@ def run_analysis(adjacency_matrix, model, threshold_value=0.1, title="Cora", sho
 
     # Threshold the attention matrix
     attention_matrix = threshold(attention_matrix, threshold_value)
+    np.save(f'{title}_attention_matrix.npy', attention_matrix)
+    print("Attention matrix saved")
 
-    # Plot the attention matrix
-    plot_heatmap(attention_matrix, f'{title} Attention Matrix')
-    plot_heatmap(adjacency_matrix, f'{title} Adjacency Matrix')
+    # # Plot the attention matrix
+    # plot_heatmap(attention_matrix, f'{title} Attention Matrix')
+    # plot_heatmap(adjacency_matrix, f'{title} Adjacency Matrix')
 
-    print("Heatmaps saved")
+    # print("Heatmaps saved")
 
-    # Get the degree distributions
-    adjacency_degree_distribution = get_degree_distribution_table(adjacency_matrix, f'{title} Adjacency Degree Distribution')
-    print(adjacency_degree_distribution)
-    attention_degree_distribution = get_degree_distribution_table(attention_matrix, f'{title} Attention Degree Distribution')
-    print(attention_degree_distribution)
+    # # Get the degree distributions
+    # adjacency_degree_distribution = get_degree_distribution_table(adjacency_matrix, f'{title} Adjacency Degree Distribution')
+    # print(adjacency_degree_distribution)
+    # attention_degree_distribution = get_degree_distribution_table(attention_matrix, f'{title} Attention Degree Distribution')
+    # print(attention_degree_distribution)
 
     print("Degree distributions saved")
 
     # Get the shortest path matrices
     if shortest_paths:
-        adjacency_shortest_path_matrix = get_shortest_path_matrix(adjacency_matrix)
-        attention_shortest_path_matrix = get_shortest_path_matrix(attention_matrix)
+        if load_save:
+            adjacency_shortest_path_matrix = torch.load(f'roman_shortest_path_matrix.pt')
+            attention_shortest_path_matrix = get_shortest_path_matrix(attention_matrix)
+        else:
+            adjacency_shortest_path_matrix = get_shortest_path_matrix(adjacency_matrix)
+            attention_shortest_path_matrix = get_shortest_path_matrix(attention_matrix)
         plot_heatmap(adjacency_shortest_path_matrix, f'{title} Adjacency Shortest Path Matrix')
         plot_heatmap(attention_shortest_path_matrix, f'{title} Attention Shortest Path Matrix')
 
-    # Get the commute times
-    adjacency_commute_times = compute_commute_times(adjacency_matrix)
-    attention_commute_times = compute_commute_times(attention_matrix)
-    plot_heatmap(adjacency_commute_times, f'{title} Adjacency Commute Times')
-    plot_heatmap(attention_commute_times, f'{title} Attention Commute Times')
+    # # Get the commute times
+    # adjacency_commute_times = compute_commute_times(adjacency_matrix)
+    # attention_commute_times = compute_commute_times(attention_matrix)
+    # plot_heatmap(adjacency_commute_times, f'{title} Adjacency Commute Times')
+    # plot_heatmap(attention_commute_times, f'{title} Attention Commute Times')
 
-    # Get the number of triangles
-    adjacency_triangles = triangle_count(adjacency_matrix)
-    attention_triangles = triangle_count(attention_matrix)
-    print(f'{title} Adjacency triangles: {adjacency_triangles}')
-    print(f'{title} Attention triangles: {attention_triangles}')
+    # # Get the number of triangles
+    # adjacency_triangles = triangle_count(adjacency_matrix)
+    # attention_triangles = triangle_count(attention_matrix)
+    # print(f'{title} Adjacency triangles: {adjacency_triangles}')
+    # print(f'{title} Attention triangles: {attention_triangles}')
 
 if __name__ == "__main__":
     # dataset = preprocess_roman_empire()
@@ -229,7 +235,8 @@ if __name__ == "__main__":
     print(data)
     data.dense_adj = to_dense_adj(data.edge_index, max_num_nodes=data.x.shape[0])[0]
     # data.dense_sp_matrix = get_shortest_path_matrix_tensor(data.dense_adj).float()
-    adjacency_matrix = nx.to_numpy_array(nx.from_edgelist(data.edge_index.T.tolist()))
+    # adjacency_matrix = nx.to_numpy_array(nx.from_edgelist(data.edge_index.T.tolist()))
+    adjacency_matrix = data.dense_adj.cpu().numpy()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     data = data.to(device)
@@ -270,4 +277,4 @@ if __name__ == "__main__":
     
     print(f"Median time per epoch: {torch.tensor(times).median():.4f}s")
 
-    run_analysis(adjacency_matrix, model, shortest_paths=False, title="Roman Empire")
+    run_analysis(adjacency_matrix, model, shortest_paths=True, title="Roman Empire")
