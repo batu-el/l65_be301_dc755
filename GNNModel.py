@@ -308,3 +308,85 @@ class DenseGraphTransformerModel_V2(Module):
         x = self.lin_out(x)
 
         return x.log_softmax(dim=-1)
+    
+def train_sparse(data=None, model=None, optimizer=None):
+    model.train()
+    optimizer.zero_grad()
+    out = model(data.x, data.dense_adj)
+    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
+    loss.backward()
+    optimizer.step()
+    return float(loss)
+
+@torch.no_grad()
+def test_sparse(data=None, model=None):
+    model.eval()
+    pred, accs = model(data.x, data.dense_adj).argmax(dim=-1), []
+    for _, mask in data('train_mask', 'val_mask', 'test_mask'):
+        accs.append(int((pred[mask] == data.y[mask]).sum()) / int(mask.sum()))
+    return accs
+
+def sparse_training_loop(data=None, model=None, optimizer=None):
+    best_val_acc = test_acc = 0
+    times = []
+    for epoch in range(1, 100):
+        start = time.time()
+        loss = train_sparse(data, model, optimizer)
+        train_acc, val_acc, tmp_test_acc = test_sparse(data, model)
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+            test_acc = tmp_test_acc
+        print(f'Epoch: {epoch:04d}, Loss: {loss:.4f} Train: {train_acc:.4f}, '
+            f'Val: {val_acc:.4f}, Test: {tmp_test_acc:.4f}, '
+            f'Final Test: {test_acc:.4f}')
+        times.append(time.time() - start)
+
+    print(f"Median time per epoch: {torch.tensor(times).median():.4f}s")
+
+def train_dense(data=None, model=None, optimizer=None):
+    model.train()
+    optimizer.zero_grad()
+    out = model(data.x, 0, data.dense_sp_matrix)
+    loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
+    loss.backward()
+    optimizer.step()
+    return float(loss)
+
+@torch.no_grad()
+def test_dense(data=None, model=None):
+    model.eval()
+    pred, accs = model(data.x, 0, data.dense_sp_matrix).argmax(dim=-1), []
+    for _, mask in data('train_mask', 'val_mask', 'test_mask'):
+        accs.append(int((pred[mask] == data.y[mask]).sum()) / int(mask.sum()))
+    return accs
+
+def dense_training_loop(data=None, model=None, optimizer=None):
+    """
+    Train a dense graph transformer model.
+    Note: data.dense_sp_matrix is the shortest path matrix of the graph,
+    and must be defined in the data object.
+
+    Args:
+    data: Data: The graph data
+    model: DenseGraphTransformerModel: The model
+    optimizer: Adam: The optimizer
+
+    Returns:
+    None
+
+    """
+    best_val_acc = test_acc = 0
+    times = []
+    for epoch in range(1, 100):
+        start = time.time()
+        loss = train_dense(data, model, optimizer)
+        train_acc, val_acc, tmp_test_acc = test_dense(data, model)
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+            test_acc = tmp_test_acc
+        print(f'Epoch: {epoch:04d}, Loss: {loss:.4f} Train: {train_acc:.4f}, '
+            f'Val: {val_acc:.4f}, Test: {tmp_test_acc:.4f}, '
+            f'Final Test: {test_acc:.4f}')
+        times.append(time.time() - start)
+
+    print(f"Median time per epoch: {torch.tensor(times).median():.4f}s")

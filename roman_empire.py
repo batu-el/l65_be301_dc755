@@ -56,8 +56,8 @@ dense_adj = to_dense_adj(dataset.edge_index, max_num_nodes=dataset.x.shape[0])[0
 # torch.save(get_shortest_path_matrix_tensor(dense_adj), 'roman_shortest_path_matrix.pt')
 
 # load = torch.load('roman_shortest_path_matrix.pt')
-loaded_attention = np.load('Roman Empire_attention_matrix.npy')
-print("saving shortest path attention matrix")
-torch.save(get_shortest_path_matrix(loaded_attention), 'roman_attention_shortest_path_matrix.pt')
-print(loaded_attention)
+# loaded_attention = np.load('Roman Empire_attention_matrix.npy')
+# print("saving shortest path attention matrix")
+# torch.save(get_shortest_path_matrix(loaded_attention), 'roman_attention_shortest_path_matrix.pt')
+# print(loaded_attention)
 

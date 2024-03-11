@@ -10,7 +10,7 @@ import torch
 import torch.nn.functional as F
 import torch_geometric
 from torch_geometric.datasets import Planetoid
-from GNNModel import GNNModel, SparseGraphTransformerModel, DenseGraphTransformerModel
+from GNNModel import GNNModel, SparseGraphTransformerModel, DenseGraphTransformerModel, train_sparse, test_sparse, sparse_training_loop
 from dgl.data import RomanEmpireDataset
 from roman_empire import preprocess_roman_empire
 from torch_geometric.data import Data, Batch
@@ -244,37 +244,6 @@ if __name__ == "__main__":
     model = SparseGraphTransformerModel(data=data).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-    def train():
-        model.train()
-        optimizer.zero_grad()
-        out = model(data.x, data.dense_adj)
-        loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
-        loss.backward()
-        optimizer.step()
-        return float(loss)
-    
-    @torch.no_grad()
-    def test():
-        model.eval()
-        pred, accs = model(data.x, data.dense_adj).argmax(dim=-1), []
-        for _, mask in data('train_mask', 'val_mask', 'test_mask'):
-            accs.append(int((pred[mask] == data.y[mask]).sum()) / int(mask.sum()))
-        return accs
-    
-    best_val_acc = test_acc = 0
-    times = []
-    for epoch in range(1, 100):
-        start = time.time()
-        loss = train()
-        train_acc, val_acc, tmp_test_acc = test()
-        if val_acc > best_val_acc:
-            best_val_acc = val_acc
-            test_acc = tmp_test_acc
-        print(f'Epoch: {epoch:04d}, Loss: {loss:.4f} Train: {train_acc:.4f}, '
-            f'Val: {val_acc:.4f}, Test: {tmp_test_acc:.4f}, '
-            f'Final Test: {test_acc:.4f}')
-        times.append(time.time() - start)
-    
-    print(f"Median time per epoch: {torch.tensor(times).median():.4f}s")
+    sparse_training_loop(data=data, model=model, optimizer=optimizer)
 
-    run_analysis(adjacency_matrix, model, shortest_paths=True, title="Roman Empire")
+    # run_analysis(adjacency_matrix, model, shortest_paths=True, title="Roman Empire")
