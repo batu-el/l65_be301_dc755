@@ -10,9 +10,10 @@ import torch
 import torch.nn.functional as F
 import torch_geometric
 from torch_geometric.datasets import Planetoid
-from GNNModel import GNNModel, SparseGraphTransformerModel, DenseGraphTransformerModel, train_sparse, test_sparse, sparse_training_loop
+from GNNModel import GNNModel, SparseGraphTransformerModel, DenseGraphTransformerModel, train_sparse, test_sparse, sparse_training_loop, dense_training_loop
 from dgl.data import RomanEmpireDataset
 from roman_empire import preprocess_roman_empire
+from utils.web_kb import texas_data, cornell_data
 from torch_geometric.data import Data, Batch
 from torch_geometric.utils import to_dense_adj
 
@@ -190,17 +191,17 @@ def run_analysis(adjacency_matrix, model, threshold_value=0.1, title="Cora", sho
     np.save(f'{title}_attention_matrix.npy', attention_matrix)
     print("Attention matrix saved")
 
-    # # Plot the attention matrix
-    # plot_heatmap(attention_matrix, f'{title} Attention Matrix')
-    # plot_heatmap(adjacency_matrix, f'{title} Adjacency Matrix')
+    # Plot the attention matrix
+    plot_heatmap(attention_matrix, f'{title} Attention Matrix')
+    plot_heatmap(adjacency_matrix, f'{title} Adjacency Matrix')
 
-    # print("Heatmaps saved")
+    print("Heatmaps saved")
 
-    # # Get the degree distributions
-    # adjacency_degree_distribution = get_degree_distribution_table(adjacency_matrix, f'{title} Adjacency Degree Distribution')
-    # print(adjacency_degree_distribution)
-    # attention_degree_distribution = get_degree_distribution_table(attention_matrix, f'{title} Attention Degree Distribution')
-    # print(attention_degree_distribution)
+    # Get the degree distributions
+    adjacency_degree_distribution = get_degree_distribution_table(adjacency_matrix, f'{title} Adjacency Degree Distribution')
+    print(adjacency_degree_distribution)
+    attention_degree_distribution = get_degree_distribution_table(attention_matrix, f'{title} Attention Degree Distribution')
+    print(attention_degree_distribution)
 
     print("Degree distributions saved")
 
@@ -215,35 +216,47 @@ def run_analysis(adjacency_matrix, model, threshold_value=0.1, title="Cora", sho
         plot_heatmap(adjacency_shortest_path_matrix, f'{title} Adjacency Shortest Path Matrix')
         plot_heatmap(attention_shortest_path_matrix, f'{title} Attention Shortest Path Matrix')
 
-    # # Get the commute times
-    # adjacency_commute_times = compute_commute_times(adjacency_matrix)
-    # attention_commute_times = compute_commute_times(attention_matrix)
-    # plot_heatmap(adjacency_commute_times, f'{title} Adjacency Commute Times')
-    # plot_heatmap(attention_commute_times, f'{title} Attention Commute Times')
+    # Get the commute times
+    adjacency_commute_times = compute_commute_times(adjacency_matrix)
+    attention_commute_times = compute_commute_times(attention_matrix)
+    plot_heatmap(adjacency_commute_times, f'{title} Adjacency Commute Times')
+    plot_heatmap(attention_commute_times, f'{title} Attention Commute Times')
 
-    # # Get the number of triangles
-    # adjacency_triangles = triangle_count(adjacency_matrix)
-    # attention_triangles = triangle_count(attention_matrix)
-    # print(f'{title} Adjacency triangles: {adjacency_triangles}')
-    # print(f'{title} Attention triangles: {attention_triangles}')
+    # Get the number of triangles
+    adjacency_triangles = triangle_count(adjacency_matrix)
+    attention_triangles = triangle_count(attention_matrix)
+    print(f'{title} Adjacency triangles: {adjacency_triangles}')
+    print(f'{title} Attention triangles: {attention_triangles}')
 
 if __name__ == "__main__":
     # dataset = preprocess_roman_empire()
     # dataset = 'Cora'
     # dataset = Planetoid('/tmp/Cora', dataset)
-    data = preprocess_roman_empire()
-    print(data)
-    data.dense_adj = to_dense_adj(data.edge_index, max_num_nodes=data.x.shape[0])[0]
+
+
+    # data = preprocess_roman_empire()
+    # print(data)
+    # data.dense_adj = to_dense_adj(data.edge_index, max_num_nodes=data.x.shape[0])[0]
     # data.dense_sp_matrix = get_shortest_path_matrix_tensor(data.dense_adj).float()
     # adjacency_matrix = nx.to_numpy_array(nx.from_edgelist(data.edge_index.T.tolist()))
-    adjacency_matrix = data.dense_adj.cpu().numpy()
+    # adjacency_matrix = data.dense_adj.cpu().numpy()
 
+    data = texas_data()
+    data.dense_adj = to_dense_adj(data.edge_index, max_num_nodes=data.x.shape[0])[0]
+    data.train_mask = data.train_mask[:, 5]
+    data.val_mask = data.val_mask[:, 5]
+    data.test_mask = data.test_mask[:, 5]
+    print(data.train_mask)
+    data.dense_sp_matrix = get_shortest_path_matrix_tensor(data.dense_adj).float()
+    adjacency_matrix = data.dense_adj.cpu().numpy()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     data = data.to(device)
-    # model = DenseGraphTransformerModel(data=data).to(device)
-    model = SparseGraphTransformerModel(data=data).to(device)
+    model = DenseGraphTransformerModel(data=data).to(device)
+    # model = SparseGraphTransformerModel(data=data).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-    sparse_training_loop(data=data, model=model, optimizer=optimizer)
+    # sparse_training_loop(data=data, model=model, optimizer=optimizer)
+    dense_training_loop(data=data, model=model, optimizer=optimizer)
 
     # run_analysis(adjacency_matrix, model, shortest_paths=True, title="Roman Empire")
+    run_analysis(adjacency_matrix=adjacency_matrix, model=model, shortest_paths=True, title="Texas", load_save=False)
