@@ -14,6 +14,7 @@ from GNNModel import GNNModel, SparseGraphTransformerModel, DenseGraphTransforme
 from dgl.data import RomanEmpireDataset
 from roman_empire import preprocess_roman_empire
 from utils.web_kb import texas_data, cornell_data
+from utils.save_matrix import save_matrix
 from torch_geometric.data import Data, Batch
 from torch_geometric.utils import to_dense_adj
 
@@ -188,7 +189,8 @@ def run_analysis(adjacency_matrix, model, threshold_value=0.1, title="Cora", sho
 
     # Threshold the attention matrix
     attention_matrix = threshold(attention_matrix, threshold_value)
-    np.save(f'{title}_attention_matrix.npy', attention_matrix)
+    # np.save(f'{title}_attention_matrix.npy', attention_matrix)
+    save_matrix(attention_matrix, f'{title}_attention_matrix')
     print("Attention matrix saved")
 
     # Plot the attention matrix
@@ -225,8 +227,44 @@ def run_analysis(adjacency_matrix, model, threshold_value=0.1, title="Cora", sho
     # Get the number of triangles
     adjacency_triangles = triangle_count(adjacency_matrix)
     attention_triangles = triangle_count(attention_matrix)
+    # Save the values to a text file
+    with open('triangles.txt', 'w') as file:
+        file.write(f'{title} Adjacency triangles: {adjacency_triangles}\n')
+        file.write(f'{title} Attention triangles: {attention_triangles}\n')
     print(f'{title} Adjacency triangles: {adjacency_triangles}')
     print(f'{title} Attention triangles: {attention_triangles}')
+
+def run_thresholded_attention_analysis(thresholded_attention_matrix, title):
+    """
+    Runs the analysis on the given thresholded attention matrix
+    and saves the results to the given directory.
+    Args:
+    thresholded_attention_matrix: np.ndarray: The thresholded attention matrix
+    """
+    # Plot the attention matrix
+    plot_heatmap(thresholded_attention_matrix, f'{title} Attention Matrix')
+
+    # Get the degree distributions
+    attention_degree_distribution = get_degree_distribution_table(thresholded_attention_matrix, f'{title} Attention Degree Distribution')
+    print(attention_degree_distribution)
+
+    print("Degree distributions saved")
+
+    # Get the shortest path matrices
+    attention_shortest_path_matrix = get_shortest_path_matrix(thresholded_attention_matrix)
+    plot_heatmap(attention_shortest_path_matrix, f'{title} Attention Shortest Path Matrix')
+
+    # Get the commute times
+    attention_commute_times = compute_commute_times(thresholded_attention_matrix)
+    plot_heatmap(attention_commute_times, f'{title} Attention Commute Times')
+
+    # Get the number of triangles
+    attention_triangles = triangle_count(thresholded_attention_matrix)
+    # Save the values to a text file
+    with open('triangles.txt', 'w') as file:
+        file.write(f'{title} Attention triangles: {attention_triangles}\n')
+    print(f'{title} Attention triangles: {attention_triangles}')
+
 
 if __name__ == "__main__":
     # dataset = preprocess_roman_empire()
