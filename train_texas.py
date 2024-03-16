@@ -147,4 +147,4 @@ def train_with_different_seeds_wisconsin(threshold_value=0.01, threshold_string=
 # train_texas(5, sparse=False, threshold_value=0.01)
 # train_cornell(5, sparse=False, threshold_value=0)
 if __name__ == "__main__":
-    train_with_different_seeds(threshold_value=0.01, threshold_string="001")
+    train_with_different_seeds_wisconsin(threshold_value=0.01, threshold_string="001")

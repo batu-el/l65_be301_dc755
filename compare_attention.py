@@ -72,21 +72,21 @@ if __name__ == "__main__":
     # print(np.count_nonzero(seed_1))
     # print(seed_1)
 
-    analysis_directory("texas_attention_matrices_001", "Texas")
+    # analysis_directory("texas_attention_matrices_001", "Texas")
 
-    # matrix_list = load_attention_directory("cornell_attention_matrices")
-    # save_attention_matrix(compare_attention_list(matrix_list), "cornell_attention_matrices", "cornell_attention_matrix_seed_masked")
+    matrix_list = load_attention_directory("cornell_attention_matrices_001")
+    save_attention_matrix(compare_attention_list(matrix_list), "cornell_attention_matrices_001", "cornell_attention_matrix_seed_masked")
 
-    # masked = np.load("cornell_attention_matrices/cornell_attention_matrix_seed_masked.npy")
-    # # count the number of 1s
-    # print(np.count_nonzero(masked))
-    # print(masked)
-    # seed_1 = np.load("cornell_attention_matrices/cornell_attention_matrix_seed_1.npy")
-    # # count the number of 1s
-    # print(np.count_nonzero(seed_1))
-    # print(seed_1)
+    masked = np.load("cornell_attention_matrices_001/cornell_attention_matrix_seed_masked.npy")
+    # count the number of 1s
+    print(np.count_nonzero(masked))
+    print(masked)
+    seed_1 = np.load("cornell_attention_matrices_001/cornell_attention_matrix_seed_1.npy")
+    # count the number of 1s
+    print(np.count_nonzero(seed_1))
+    print(seed_1)
 
-    # analysis_directory("cornell_attention_matrices")
+    analysis_directory("cornell_attention_matrices_001", "Cornell")
 
     # matrix_list = load_attention_directory("wisconsin_attention_matrices")
     # save_attention_matrix(compare_attention_list(matrix_list), "wisconsin_attention_matrices", "wisconsin_attention_matrix_seed_masked")
