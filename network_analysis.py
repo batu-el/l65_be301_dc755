@@ -178,6 +178,19 @@ def triangle_count(adjacency : np.ndarray) -> int:
     graph = nx.from_numpy_array(adjacency)
     return sum(nx.triangles(graph).values()) // 3
 
+def graph_edit_distance(adjacency1 : np.ndarray, attention : np.ndarray) -> float:
+    """
+    Computes the graph edit distance between two graphs.
+    Args:
+    adjacency1: np.ndarray: The adjacency matrix of the first graph
+    adjacency2: np.ndarray: The adjacency matrix of the second graph
+    Returns:
+    float: The graph edit distance between the two graphs
+    """
+    graph1 = nx.from_numpy_array(adjacency1)
+    graph2 = nx.from_numpy_array(attention)
+    return nx.graph_edit_distance(graph1, graph2)
+
 def run_analysis(adjacency_matrix, model, threshold_value=0.1, title="Cora", shortest_paths=True, load_save=False):
     """
     Runs the analysis on the given adjacency matrix and attention matrix of the model
