@@ -23,13 +23,9 @@ def preprocess(graph, train_ratio = 0.7, val_ratio = 0.15, test_ratio = 0.15):
     data = Data(x=x, edge_index=edge_index, y=y, train_mask=train_mask, val_mask=val_mask, test_mask=test_mask)
     return data
 
-print(RomanEmpireDataset)
-
 def preprocess_roman_empire():
     dataset = RomanEmpireDataset()[0]
     return preprocess(graph=dataset)
-
-print(preprocess_roman_empire())
 
 def get_shortest_path_matrix(adjacency_matrix : np.ndarray) -> torch.Tensor:
     """
@@ -88,11 +84,11 @@ def compute_commute_times(adjacency : np.ndarray) -> np.ndarray:
 # torch.save(get_shortest_path_matrix_tensor(dense_adj), 'roman_shortest_path_matrix.pt')
 
 # load = torch.load('roman_shortest_path_matrix.pt')
-loaded_attention = np.load('Roman Empire_attention_matrix.npy')
-print("saving shortest path ADJACENCY matrix")
+# loaded_attention = np.load('Roman Empire_attention_matrix.npy')
+# print("saving shortest path ADJACENCY matrix")
 # torch.save(get_shortest_path_matrix(loaded_attention), 'roman_attention_commute_times.pt')
-np.save('Roman Empire_adjacency_commute_times.npy', compute_commute_times(dense_adj.cpu().numpy()))
-print(loaded_attention)
+# np.save('Roman Empire_adjacency_commute_times.npy', compute_commute_times(dense_adj.cpu().numpy()))
+# print(loaded_attention)
 # loaded_attention = np.load('Roman Empire_attention_matrix.npy')
 # print("saving shortest path attention matrix")
 # torch.save(get_shortest_path_matrix(loaded_attention), 'roman_attention_shortest_path_matrix.pt')

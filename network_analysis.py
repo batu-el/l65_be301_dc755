@@ -187,8 +187,8 @@ def graph_edit_distance(adjacency : np.ndarray, attention : np.ndarray) -> float
     """
     graph1 = nx.from_numpy_array(adjacency)
     graph2 = nx.from_numpy_array(attention)
-    graph_edit_distance = nx.graph_edit_distance(graph1, graph2)
-    with open('graph_edit_distance.txt', 'w') as file:
+    graph_edit_distance = np.min([x for x in nx.optimize_graph_edit_distance(graph1, graph2)])
+    with open('graph_edit_distance_2.txt', 'w') as file:
         file.write(f'Graph edit distance: {graph_edit_distance}')
     return graph_edit_distance
 
@@ -294,31 +294,39 @@ if __name__ == "__main__":
 
     # data = preprocess_roman_empire()
     # print(data)
-    data.dense_adj = to_dense_adj(data.edge_index, max_num_nodes=data.x.shape[0])[0]
-    data.dense_sp_matrix = get_shortest_path_matrix_tensor(data.dense_adj).float()
-    # adjacency_matrix = nx.to_numpy_array(nx.from_edgelist(data.edge_index.T.tolist()))
-    adjacency_matrix = data.dense_adj.cpu().numpy()
-
-    # data = texas_data()
     # data.dense_adj = to_dense_adj(data.edge_index, max_num_nodes=data.x.shape[0])[0]
-    # data.train_mask = data.train_mask[:, 5]
-    # data.val_mask = data.val_mask[:, 5]
-    # data.test_mask = data.test_mask[:, 5]
-    # print(data.train_mask)
     # data.dense_sp_matrix = get_shortest_path_matrix_tensor(data.dense_adj).float()
+    # adjacency_matrix = nx.to_numpy_array(nx.from_edgelist(data.edge_index.T.tolist()))
     # adjacency_matrix = data.dense_adj.cpu().numpy()
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    data = data.to(device)
-    model = DenseGraphTransformerModel(data=data).to(device)
-    # model = SparseGraphTransformerModel(data=data).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    # np.save('Cora_adjacency_matrix.npy', adjacency_matrix)
+    # print("saving adjacency matrix")
+    adjacency_matrix = np.load('Cora_adjacency_matrix.npy')
+
+    # # data = texas_data()
+    # # data.dense_adj = to_dense_adj(data.edge_index, max_num_nodes=data.x.shape[0])[0]
+    # # data.train_mask = data.train_mask[:, 5]
+    # # data.val_mask = data.val_mask[:, 5]
+    # # data.test_mask = data.test_mask[:, 5]
+    # # print(data.train_mask)
+    # # data.dense_sp_matrix = get_shortest_path_matrix_tensor(data.dense_adj).float()
+    # # adjacency_matrix = data.dense_adj.cpu().numpy()
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # data = data.to(device)
+    # model = DenseGraphTransformerModel(data=data).to(device)
+    # # model = SparseGraphTransformerModel(data=data).to(device)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     # sparse_training_loop(data=data, model=model, optimizer=optimizer)
-    dense_training_loop(data=data, model=model, optimizer=optimizer)
+    # dense_training_loop(data=data, model=model, optimizer=optimizer)
     # attention_weights = model.attn_weights_list[0].detach().cpu().numpy().squeeze()
 
     # graph_edit_distance(adjacency_matrix, attention_weights)
-    run_analysis(adjacency_matrix, model, title="Cora", threshold_value=0.01, shortest_paths=True, load_save=False)
+    # run_analysis(adjacency_matrix, model, title="Cora", threshold_value=0.01, shortest_paths=True, load_save=False)
 
     # run_analysis(adjacency_matrix, model, shortest_paths=True, title="Roman Empire")
     # run_analysis(adjacency_matrix=adjacency_matrix, model=model, shortest_paths=True, title="Texas", load_save=False)
+
+    cora_attention_weights = np.load('Cora_attention_matrix.npy')
+    print("Attention matrix loaded")
+    ged = graph_edit_distance(adjacency_matrix, cora_attention_weights)
+    print(f'Graph edit distance: {ged}')
