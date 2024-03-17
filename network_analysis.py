@@ -70,8 +70,6 @@ def get_degree_distribution_table(adjacency_matrix : np.ndarray, title : str = N
     return degree_distribution
 
 
-
-
 def get_shortest_path_matrix(adjacency_matrix : np.ndarray) -> torch.Tensor:
     """
     Returns the shortest path matrix of a graph.
@@ -178,7 +176,7 @@ def triangle_count(adjacency : np.ndarray) -> int:
     graph = nx.from_numpy_array(adjacency)
     return sum(nx.triangles(graph).values()) // 3
 
-def graph_edit_distance(adjacency1 : np.ndarray, attention : np.ndarray) -> float:
+def graph_edit_distance(adjacency : np.ndarray, attention : np.ndarray) -> float:
     """
     Computes the graph edit distance between two graphs.
     Args:
@@ -187,9 +185,12 @@ def graph_edit_distance(adjacency1 : np.ndarray, attention : np.ndarray) -> floa
     Returns:
     float: The graph edit distance between the two graphs
     """
-    graph1 = nx.from_numpy_array(adjacency1)
+    graph1 = nx.from_numpy_array(adjacency)
     graph2 = nx.from_numpy_array(attention)
-    return nx.graph_edit_distance(graph1, graph2)
+    graph_edit_distance = nx.graph_edit_distance(graph1, graph2)
+    with open('graph_edit_distance.txt', 'w') as file:
+        file.write(f'Graph edit distance: {graph_edit_distance}')
+    return graph_edit_distance
 
 def run_analysis(adjacency_matrix, model, threshold_value=0.1, title="Cora", shortest_paths=True, load_save=False):
     """
@@ -202,50 +203,53 @@ def run_analysis(adjacency_matrix, model, threshold_value=0.1, title="Cora", sho
 
     # Threshold the attention matrix
     attention_matrix = threshold(attention_matrix, threshold_value)
-    # np.save(f'{title}_attention_matrix.npy', attention_matrix)
-    save_matrix(attention_matrix, f'{title}_attention_matrix')
-    print("Attention matrix saved")
+    np.save(f'{title}_attention_matrix.npy', attention_matrix)
+    # save_matrix(attention_matrix, f'{title}_attention_matrix')
+    # print("Attention matrix saved")
 
     # Plot the attention matrix
-    plot_heatmap(attention_matrix, f'{title} Attention Matrix')
-    plot_heatmap(adjacency_matrix, f'{title} Adjacency Matrix')
+    # plot_heatmap(attention_matrix, f'{title} Attention Matrix')
+    # plot_heatmap(adjacency_matrix, f'{title} Adjacency Matrix')
 
-    print("Heatmaps saved")
+    # print("Heatmaps saved")
 
     # Get the degree distributions
-    adjacency_degree_distribution = get_degree_distribution_table(adjacency_matrix, f'{title} Adjacency Degree Distribution')
-    print(adjacency_degree_distribution)
-    attention_degree_distribution = get_degree_distribution_table(attention_matrix, f'{title} Attention Degree Distribution')
-    print(attention_degree_distribution)
+    # adjacency_degree_distribution = get_degree_distribution_table(adjacency_matrix, f'{title} Adjacency Degree Distribution')
+    # print(adjacency_degree_distribution)
+    # attention_degree_distribution = get_degree_distribution_table(attention_matrix, f'{title} Attention Degree Distribution')
+    # print(attention_degree_distribution)
 
-    print("Degree distributions saved")
+    # print("Degree distributions saved")
 
-    # Get the shortest path matrices
-    if shortest_paths:
-        if load_save:
-            adjacency_shortest_path_matrix = torch.load(f'roman_shortest_path_matrix.pt')
-            attention_shortest_path_matrix = get_shortest_path_matrix(attention_matrix)
-        else:
-            adjacency_shortest_path_matrix = get_shortest_path_matrix(adjacency_matrix)
-            attention_shortest_path_matrix = get_shortest_path_matrix(attention_matrix)
-        plot_heatmap(adjacency_shortest_path_matrix, f'{title} Adjacency Shortest Path Matrix')
-        plot_heatmap(attention_shortest_path_matrix, f'{title} Attention Shortest Path Matrix')
+    # # Get the shortest path matrices
+    # if shortest_paths:
+    #     if load_save:
+    #         adjacency_shortest_path_matrix = torch.load(f'roman_shortest_path_matrix.pt')
+    #         attention_shortest_path_matrix = get_shortest_path_matrix(attention_matrix)
+    #     else:
+    #         adjacency_shortest_path_matrix = get_shortest_path_matrix(adjacency_matrix)
+    #         attention_shortest_path_matrix = get_shortest_path_matrix(attention_matrix)
+    #     plot_heatmap(adjacency_shortest_path_matrix, f'{title} Adjacency Shortest Path Matrix')
+    #     plot_heatmap(attention_shortest_path_matrix, f'{title} Attention Shortest Path Matrix')
 
-    # Get the commute times
-    adjacency_commute_times = compute_commute_times(adjacency_matrix)
-    attention_commute_times = compute_commute_times(attention_matrix)
-    plot_heatmap(adjacency_commute_times, f'{title} Adjacency Commute Times')
-    plot_heatmap(attention_commute_times, f'{title} Attention Commute Times')
+    # # Get the commute times
+    # adjacency_commute_times = compute_commute_times(adjacency_matrix)
+    # attention_commute_times = compute_commute_times(attention_matrix)
+    # plot_heatmap(adjacency_commute_times, f'{title} Adjacency Commute Times')
+    # plot_heatmap(attention_commute_times, f'{title} Attention Commute Times')
 
-    # Get the number of triangles
-    adjacency_triangles = triangle_count(adjacency_matrix)
-    attention_triangles = triangle_count(attention_matrix)
-    # Save the values to a text file
-    with open('triangles.txt', 'w') as file:
-        file.write(f'{title} Adjacency triangles: {adjacency_triangles}\n')
-        file.write(f'{title} Attention triangles: {attention_triangles}\n')
-    print(f'{title} Adjacency triangles: {adjacency_triangles}')
-    print(f'{title} Attention triangles: {attention_triangles}')
+    ged = graph_edit_distance(adjacency_matrix, attention_matrix)
+    print(f'Graph edit distance: {ged}')
+
+    # # Get the number of triangles
+    # adjacency_triangles = triangle_count(adjacency_matrix)
+    # attention_triangles = triangle_count(attention_matrix)
+    # # Save the values to a text file
+    # with open('triangles.txt', 'w') as file:
+    #     file.write(f'{title} Adjacency triangles: {adjacency_triangles}\n')
+    #     file.write(f'{title} Attention triangles: {attention_triangles}\n')
+    # print(f'{title} Adjacency triangles: {adjacency_triangles}')
+    # print(f'{title} Attention triangles: {attention_triangles}')
 
 def run_thresholded_attention_analysis(thresholded_attention_matrix, title):
     """
@@ -271,6 +275,9 @@ def run_thresholded_attention_analysis(thresholded_attention_matrix, title):
     attention_commute_times = compute_commute_times(thresholded_attention_matrix)
     plot_heatmap(attention_commute_times, f'{title} Attention Commute Times')
 
+    ged = graph_edit_distance(adjacency_matrix, thresholded_attention_matrix)
+    print(f'Graph edit distance: {ged}')
+
     # Get the number of triangles
     attention_triangles = triangle_count(thresholded_attention_matrix)
     # Save the values to a text file
@@ -281,25 +288,25 @@ def run_thresholded_attention_analysis(thresholded_attention_matrix, title):
 
 if __name__ == "__main__":
     # dataset = preprocess_roman_empire()
-    # dataset = 'Cora'
-    # dataset = Planetoid('/tmp/Cora', dataset)
-
+    dataset = 'Cora'
+    dataset = Planetoid('/tmp/Cora', dataset)
+    data = dataset[0]
 
     # data = preprocess_roman_empire()
     # print(data)
-    # data.dense_adj = to_dense_adj(data.edge_index, max_num_nodes=data.x.shape[0])[0]
-    # data.dense_sp_matrix = get_shortest_path_matrix_tensor(data.dense_adj).float()
-    # adjacency_matrix = nx.to_numpy_array(nx.from_edgelist(data.edge_index.T.tolist()))
-    # adjacency_matrix = data.dense_adj.cpu().numpy()
-
-    data = texas_data()
     data.dense_adj = to_dense_adj(data.edge_index, max_num_nodes=data.x.shape[0])[0]
-    data.train_mask = data.train_mask[:, 5]
-    data.val_mask = data.val_mask[:, 5]
-    data.test_mask = data.test_mask[:, 5]
-    print(data.train_mask)
     data.dense_sp_matrix = get_shortest_path_matrix_tensor(data.dense_adj).float()
+    # adjacency_matrix = nx.to_numpy_array(nx.from_edgelist(data.edge_index.T.tolist()))
     adjacency_matrix = data.dense_adj.cpu().numpy()
+
+    # data = texas_data()
+    # data.dense_adj = to_dense_adj(data.edge_index, max_num_nodes=data.x.shape[0])[0]
+    # data.train_mask = data.train_mask[:, 5]
+    # data.val_mask = data.val_mask[:, 5]
+    # data.test_mask = data.test_mask[:, 5]
+    # print(data.train_mask)
+    # data.dense_sp_matrix = get_shortest_path_matrix_tensor(data.dense_adj).float()
+    # adjacency_matrix = data.dense_adj.cpu().numpy()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     data = data.to(device)
     model = DenseGraphTransformerModel(data=data).to(device)
@@ -308,6 +315,10 @@ if __name__ == "__main__":
 
     # sparse_training_loop(data=data, model=model, optimizer=optimizer)
     dense_training_loop(data=data, model=model, optimizer=optimizer)
+    # attention_weights = model.attn_weights_list[0].detach().cpu().numpy().squeeze()
+
+    # graph_edit_distance(adjacency_matrix, attention_weights)
+    run_analysis(adjacency_matrix, model, title="Cora", threshold_value=0.01, shortest_paths=True, load_save=False)
 
     # run_analysis(adjacency_matrix, model, shortest_paths=True, title="Roman Empire")
-    run_analysis(adjacency_matrix=adjacency_matrix, model=model, shortest_paths=True, title="Texas", load_save=False)
+    # run_analysis(adjacency_matrix=adjacency_matrix, model=model, shortest_paths=True, title="Texas", load_save=False)
