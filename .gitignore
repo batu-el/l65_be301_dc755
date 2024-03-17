@@ -8,3 +8,4 @@ Degree_*
 interactive_cpu.sh
 *.pt
 *.npy
+*.zip
