@@ -1,0 +1,2 @@
+Cora Adjacency triangles: 1630
+Cora Attention triangles: 13754
