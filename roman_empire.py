@@ -92,4 +92,7 @@ print("saving shortest path ADJACENCY matrix")
 # torch.save(get_shortest_path_matrix(loaded_attention), 'roman_attention_commute_times.pt')
 np.save('Roman Empire_adjacency_commute_times.npy', compute_commute_times(dense_adj.cpu().numpy()))
 print(loaded_attention)
-
+# loaded_attention = np.load('Roman Empire_attention_matrix.npy')
+# print("saving shortest path attention matrix")
+# torch.save(get_shortest_path_matrix(loaded_attention), 'roman_attention_shortest_path_matrix.pt')
+# print(loaded_attention)
