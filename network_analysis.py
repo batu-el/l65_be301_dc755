@@ -19,6 +19,7 @@ from torch_geometric.data import Data, Batch
 from torch_geometric.utils import to_dense_adj
 
 from scipy.linalg import pinv
+from sklearn.metrics import matthews_corrcoef
 
 def threshold(matrix : np.ndarray, threshold : float) -> np.ndarray:
     """
@@ -187,7 +188,7 @@ def graph_edit_distance(adjacency : np.ndarray, attention : np.ndarray) -> float
     """
     graph1 = nx.from_numpy_array(adjacency)
     graph2 = nx.from_numpy_array(attention)
-    graph_edit_distance = np.min([x for x in nx.optimize_graph_edit_distance(graph1, graph2)])
+    graph_edit_distance = next(nx.optimize_graph_edit_distance(graph1, graph2))
     with open('graph_edit_distance_2.txt', 'w') as file:
         file.write(f'Graph edit distance: {graph_edit_distance}')
     return graph_edit_distance
@@ -326,7 +327,8 @@ if __name__ == "__main__":
     # run_analysis(adjacency_matrix, model, shortest_paths=True, title="Roman Empire")
     # run_analysis(adjacency_matrix=adjacency_matrix, model=model, shortest_paths=True, title="Texas", load_save=False)
 
-    cora_attention_weights = np.load('Cora_attention_matrix.npy')
+    # cora_attention_weights = np.load('Cora_attention_matrix.npy')
+    texas_attention_weights = np.load
     print("Attention matrix loaded")
-    ged = graph_edit_distance(adjacency_matrix, cora_attention_weights)
+    ged = matthews_corrcoef(adjacency_matrix.flatten(), cora_attention_weights.flatten())
     print(f'Graph edit distance: {ged}')
