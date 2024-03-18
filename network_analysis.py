@@ -19,7 +19,7 @@ from torch_geometric.data import Data, Batch
 from torch_geometric.utils import to_dense_adj
 
 from scipy.linalg import pinv
-from sklearn.metrics import matthews_corrcoef
+from sklearn.metrics import matthews_corrcoef, f1_score, recall_score, precision_score
 
 def threshold(matrix : np.ndarray, threshold : float) -> np.ndarray:
     """
@@ -289,9 +289,9 @@ def run_thresholded_attention_analysis(thresholded_attention_matrix, title):
 
 if __name__ == "__main__":
     # dataset = preprocess_roman_empire()
-    dataset = 'Cora'
-    dataset = Planetoid('/tmp/Cora', dataset)
-    data = dataset[0]
+    # dataset = 'Cora'
+    # dataset = Planetoid('/tmp/Cora', dataset)
+    # data = dataset[0]
 
     # data = preprocess_roman_empire()
     # print(data)
@@ -301,16 +301,16 @@ if __name__ == "__main__":
     # adjacency_matrix = data.dense_adj.cpu().numpy()
     # np.save('Cora_adjacency_matrix.npy', adjacency_matrix)
     # print("saving adjacency matrix")
-    adjacency_matrix = np.load('Cora_adjacency_matrix.npy')
+    # adjacency_matrix = np.load('Cora_adjacency_matrix.npy')
 
-    # # data = texas_data()
-    # # data.dense_adj = to_dense_adj(data.edge_index, max_num_nodes=data.x.shape[0])[0]
+    data = texas_data()
+    data.dense_adj = to_dense_adj(data.edge_index, max_num_nodes=data.x.shape[0])[0]
     # # data.train_mask = data.train_mask[:, 5]
     # # data.val_mask = data.val_mask[:, 5]
     # # data.test_mask = data.test_mask[:, 5]
     # # print(data.train_mask)
     # # data.dense_sp_matrix = get_shortest_path_matrix_tensor(data.dense_adj).float()
-    # # adjacency_matrix = data.dense_adj.cpu().numpy()
+    adjacency_matrix = data.dense_adj.cpu().numpy()
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # data = data.to(device)
     # model = DenseGraphTransformerModel(data=data).to(device)
@@ -328,7 +328,10 @@ if __name__ == "__main__":
     # run_analysis(adjacency_matrix=adjacency_matrix, model=model, shortest_paths=True, title="Texas", load_save=False)
 
     # cora_attention_weights = np.load('Cora_attention_matrix.npy')
-    texas_attention_weights = np.load
+    texas_attention_weights = np.load('texas_attention_matrix_seed_1.npy')
     print("Attention matrix loaded")
-    ged = matthews_corrcoef(adjacency_matrix.flatten(), cora_attention_weights.flatten())
-    print(f'Graph edit distance: {ged}')
+    ged = matthews_corrcoef(texas_attention_weights.flatten(), adjacency_matrix.flatten())
+    precision = precision_score(texas_attention_weights.flatten(), adjacency_matrix.flatten())
+    recall = recall_score(texas_attention_weights.flatten(), adjacency_matrix.flatten())
+    f1 = f1_score(texas_attention_weights.flatten(), adjacency_matrix.flatten())
+    print(f'MCC: {ged}, f1 score: {f1}, precision: {precision}, recall: {recall}')
