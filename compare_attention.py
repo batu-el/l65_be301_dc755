@@ -91,6 +91,18 @@ def graph_non_zero_count(directory, masked_directory, masked_filename, analysis_
     plt.savefig("non_zero_entries.png")
     plt.show()
 
+def flattened_metrics(adjacency, thresholded_attention_matrix, title):
+    """
+    Calculate the precision, recall, f1, and MCC between the flattened
+    adjacency matrix and the flattened thresholded attention matrix.
+    """
+    precision = precision_score(adjacency.flatten(), thresholded_attention_matrix.flatten())
+    recall = recall_score(adjacency.flatten(), thresholded_attention_matrix.flatten())
+    f1 = f1_score(adjacency.flatten(), thresholded_attention_matrix.flatten())
+    mcc = matthews_corrcoef(adjacency.flatten(), thresholded_attention_matrix.flatten())
+    print(f"Precision: {precision}, Recall: {recall}, F1: {f1}, MCC: {mcc}")
+    return precision, recall, f1, mcc
+
 if __name__ == "__main__":
     # matrix_list = load_attention_directory("texas_attention_matrices_001")
     # save_attention_matrix(compare_attention_list(matrix_list), "texas_attention_matrices_001", "texas_attention_matrix_seed_masked")
@@ -145,7 +157,7 @@ if __name__ == "__main__":
     # print(np.count_nonzero(seed_1))
     # print(seed_1)
 
-    graph_non_zero_count("attention_matrix_seeds/texas_attention_matrices_01", "attention_matrix_seeds/texas_attention_matrices_01/masked", "texas_attention_matrix_seed_masked", "Texas", 100)
+    # graph_non_zero_count("attention_matrix_seeds/texas_attention_matrices_01", "attention_matrix_seeds/texas_attention_matrices_01/masked", "texas_attention_matrix_seed_masked", "Texas", 100)
     
     masked_96 = np.load("attention_matrix_seeds/texas_attention_matrices_001/masked/texas_attention_matrix_seed_masked_96.npy")
     thresholded_96 = np.where(masked_96 > 0, 1, 0)
@@ -153,7 +165,7 @@ if __name__ == "__main__":
     is_diagonal_zero = np.sum(np.diag(thresholded_96) == 0)
     print("Is diagonal all 0s? ", is_diagonal_zero)
 
-    masked_100 = np.load("attention_matrix_seeds/texas_attention_matrices_0001/masked/texas_attention_matrix_seed_masked_100.npy")
+    masked_100 = np.load("attention_matrix_seeds/texas_attention_matrices_01/masked/texas_attention_matrix_seed_masked_100.npy")
     thresholded_100 = np.where(masked_100 > 0, 1, 0)
     # run_thresholded_attention_analysis(thresholded_96, "Texas")
     data = texas_data()
