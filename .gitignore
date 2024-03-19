@@ -9,3 +9,5 @@ interactive_cpu.sh
 *.pt
 *.npy
 *.zip
+*.pkl
+L65/

@@ -12,7 +12,7 @@ import torch_geometric
 from torch_geometric.datasets import Planetoid
 from GNNModel import GNNModel, SparseGraphTransformerModel, DenseGraphTransformerModel, train_sparse, test_sparse, sparse_training_loop, dense_training_loop
 from dgl.data import RomanEmpireDataset
-from roman_empire import preprocess_roman_empire
+# from roman_empire import preprocess_roman_empire
 from utils.web_kb import texas_data, cornell_data
 from utils.save_matrix import save_matrix
 from torch_geometric.data import Data, Batch

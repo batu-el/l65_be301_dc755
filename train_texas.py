@@ -105,11 +105,11 @@ def train_with_different_seeds(threshold_value=0.01, threshold_string="001"):
     Train the model with different seeds and save the thresholded attention matrices
     to a corresponding directory.
     """
-    seeds = [1, 2, 3, 4, 5]
+    seeds = list(range(1, 101))
     for seed in seeds:
         set_seed(seed)
         model = train_texas(5, sparse=False, threshold_value=threshold_value)
-        attention_matrix = model.attn_weights_list[0].detach().cpu().detach().numpy().squeeze()
+        attention_matrix = model.attn_weights_list[0].detach().cpu().numpy().squeeze()
         # threshold the attention matrix
         thresholded_attention_matrix = np.where(attention_matrix > threshold_value, 1, 0)
         save_attention_matrix(thresholded_attention_matrix, F"texas_attention_matrices_{threshold_string}", "texas_attention_matrix_seed_" + str(seed))
@@ -124,7 +124,7 @@ def train_with_different_seeds_cornell(threshold_value=0.01, threshold_string="0
     for seed in seeds:
         set_seed(seed)
         model = train_cornell(5, sparse=False, threshold_value=0.01)
-        attention_matrix = model.attn_weights_list[0].detach().cpu().detach().numpy().squeeze()
+        attention_matrix = model.attn_weights_list[0].detach().cpu().numpy().squeeze()
         # threshold the attention matrix
         thresholded_attention_matrix = np.where(attention_matrix > threshold_value, 1, 0)
         save_attention_matrix(thresholded_attention_matrix, f"cornell_attention_matrices_{threshold_string}", "cornell_attention_matrix_seed_" + str(seed))
@@ -147,4 +147,4 @@ def train_with_different_seeds_wisconsin(threshold_value=0.01, threshold_string=
 # train_texas(5, sparse=False, threshold_value=0.01)
 # train_cornell(5, sparse=False, threshold_value=0)
 if __name__ == "__main__":
-    train_with_different_seeds_wisconsin(threshold_value=0.01, threshold_string="001")
+    train_with_different_seeds(threshold_value=0.1, threshold_string="01")
